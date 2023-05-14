@@ -8,9 +8,9 @@ resource "aws_vpc" "dev-vpc" {
 }
 
 //  Subnet
-resource "aws_subnet" "dev_subnet"{
-  vpc_id = var.dev-vpc
-  cidr_block = var.dev-subnet
+resource "aws_subnet" "dev_subnet" {
+  vpc_id            = var.dev-vpc
+  cidr_block        = var.dev-subnet
   availability_zone = var.subnet-az
 
   tags = {
@@ -77,10 +77,22 @@ resource "aws_security_group" "dev-vpc-sg" {
 
 // Instance resource
 resource "aws_instance" "eks-server" {
-  ami = var.os_name
-  instance_type = var.instance-type
-  key_name = var.key
+  ami                         = var.os_name
+  instance_type               = var.instance-type
+  key_name                    = var.key
   associate_public_ip_address = true
-  subnet_id = aws_subnet.dev_subnet.id
-  vpc_security_group_ids = [aws_security_group.dev-vpc-sg.id]
+  subnet_id                   = aws_subnet.dev_subnet.id
+  vpc_security_group_ids      = [aws_security_group.dev-vpc-sg.id]
+}
+
+module "sgs" {
+  source = "./sg_eks"
+  vpc_id = aws_vpc.dev-vpc.id
+}
+
+module "eks" {
+  source     = "./eks"
+  sg-ids     = module.sgs.security_group_public
+  vpc_id     = aws_vpc.dev-vpc
+  subnet-ids = aws_subnet.dev_subnet.id
 }
